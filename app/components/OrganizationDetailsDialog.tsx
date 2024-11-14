@@ -2,18 +2,22 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import { Card, CardContent } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Button } from "@/components/ui/button"
+import { Mail, MapPin, Building2, Users, Trash2 } from 'lucide-react'
 import { ApiService } from '@/app/services/api.service'
 import { createClient } from '@/utils/supabase/client'
-import { Organization, OrganizationMember } from '@/app/types/organization'
-import { Users, Mail, MapPin, Building2, ChevronLeft, ChevronRight, ChevronsUpDown, Check, Trash2 } from 'lucide-react'
+import { OrganizationMemberDto, OrganizationResponseDto } from '@/app/types/organization'
 import { useToast } from "@/hooks/use-toast"
 import { useDebounce } from '@/hooks/use-debounce'
+import { CreateEventDialog } from './CreateEventDialog'
+import { EventList } from './EventList'
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Label } from "@/components/ui/label"
 
 interface ProfileSearchResult {
     id: string;
@@ -31,8 +35,8 @@ const apiService = new ApiService()
 const supabase = createClient()
 
 export function OrganizationDetailsDialog({ organizationId, children }: OrganizationDetailsDialogProps) {
-    const [details, setDetails] = useState<Organization | null>(null)
-    const [members, setMembers] = useState<OrganizationMember[]>([])
+    const [details, setDetails] = useState<OrganizationResponseDto | null>(null)
+    const [members, setMembers] = useState<OrganizationMemberDto[]>([])
     const [loading, setLoading] = useState(true)
     const [isAdmin, setIsAdmin] = useState(false)
     const [page, setPage] = useState(1)
@@ -193,20 +197,14 @@ export function OrganizationDetailsDialog({ organizationId, children }: Organiza
     }
 
     return (
-        <Dialog
-            open={dialogOpen}
-            onOpenChange={(open) => {
-                setDialogOpen(open);
-            }}
-            modal={true}
-        >
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild onClick={(e) => {
                 e.stopPropagation();
                 setDialogOpen(true);
             }}>
                 {children}
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-4xl h-[80vh]">
                 <DialogHeader>
                     <DialogTitle>Organization Details</DialogTitle>
                 </DialogHeader>
@@ -216,185 +214,169 @@ export function OrganizationDetailsDialog({ organizationId, children }: Organiza
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
                     </div>
                 ) : details && (
-                    <div className="space-y-6">
+                    <div className="space-y-4">
                         <div>
                             <h2 className="text-2xl font-bold">{details.name}</h2>
-                            {details.description && (
-                                <p className="text-muted-foreground mt-1">{details.description}</p>
-                            )}
-                        </div>
-
-                        <div className="grid gap-2">
-                            <div className="flex items-center text-sm">
-                                <Mail className="h-4 w-4 mr-2" />
-                                <span>{details.email}</span>
-                            </div>
-                            {details.address && (
+                            <div className="grid gap-2 mt-2">
                                 <div className="flex items-center text-sm">
-                                    <MapPin className="h-4 w-4 mr-2" />
-                                    <span>{details.address}</span>
+                                    <Mail className="h-4 w-4 mr-2" />
+                                    <span>{details.email}</span>
                                 </div>
-                            )}
-                            {details.verified && (
-                                <div className="flex items-center text-sm text-green-600">
-                                    <Building2 className="h-4 w-4 mr-2" />
-                                    <span>Verified Organization</span>
-                                </div>
-                            )}
-                        </div>
-
-                        <div>
-                            <div className="flex justify-between items-center mb-4">
-                                <h3 className="text-lg font-semibold">Members</h3>
-                                {isAdmin && (
-                                    <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
-                                        <PopoverTrigger asChild>
-                                            <Button
-                                                variant="default"
-                                                size="sm"
-                                            >
-                                                <Users className="h-4 w-4 mr-2" />
-                                                Add Member
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-80">
-                                            <form onSubmit={handleAddMember} className="space-y-4">
-                                                <div className="space-y-2">
-                                                    <Label>Search Member</Label>
-                                                    <Command
-                                                        shouldFilter={false}
-                                                    >
-                                                        <CommandInput
-                                                            placeholder="Search by name or email..."
-                                                            value={searchQuery}
-                                                            onValueChange={(value) => {
-                                                                setSearchQuery(value)
-                                                                if (value) {
-                                                                    setCommandOpen(true)
-                                                                }
-                                                            }}
-                                                        />
-                                                        <CommandEmpty>
-                                                            {searchLoading ? (
-                                                                <div className="flex items-center justify-center py-2">
-                                                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900" />
-                                                                </div>
-                                                            ) : (
-                                                                'No results found.'
-                                                            )}
-                                                        </CommandEmpty>
-                                                        <CommandGroup>
-                                                            {searchResults.map((profile) => (
-                                                                <CommandItem
-                                                                    key={profile.id}
-                                                                    onSelect={() => {
-                                                                        setSelectedProfile(profile)
-                                                                        setPopoverOpen(false)
-                                                                        setCommandOpen(false)
-                                                                        setSearchQuery('')
-                                                                    }}
-                                                                >
-                                                                    <div className="flex items-center">
-                                                                        <span>
-                                                                            {profile.first_name} {profile.last_name}
-                                                                        </span>
-                                                                        <span className="ml-2 text-sm text-muted-foreground">
-                                                                            ({profile.email})
-                                                                        </span>
-                                                                    </div>
-                                                                </CommandItem>
-                                                            ))}
-                                                        </CommandGroup>
-                                                    </Command>
-                                                </div>
-                                                {selectedProfile && (
-                                                    <>
-                                                        <div className="space-y-2">
-                                                            <Label>Role</Label>
-                                                            <Select value={role} onValueChange={setRole}>
-                                                                <SelectTrigger>
-                                                                    <SelectValue placeholder="Select a role" />
-                                                                </SelectTrigger>
-                                                                <SelectContent>
-                                                                    <SelectItem value="member">Member</SelectItem>
-                                                                    <SelectItem value="admin">Admin</SelectItem>
-                                                                </SelectContent>
-                                                            </Select>
-                                                        </div>
-                                                        <Button type="submit" className="w-full" disabled={loading}>
-                                                            {loading ? 'Adding...' : 'Add Member'}
-                                                        </Button>
-                                                    </>
-                                                )}
-                                            </form>
-                                        </PopoverContent>
-                                    </Popover>
+                                {details.address && (
+                                    <div className="flex items-center text-sm">
+                                        <MapPin className="h-4 w-4 mr-2" />
+                                        <span>{details.address}</span>
+                                    </div>
                                 )}
                             </div>
-
-                            <div className="space-y-3">
-                                {members.map((member, index) => (
-                                    <Card key={member.profile.id || `member-${index}`}>
-                                        <CardContent className="flex items-center justify-between p-4">
-                                            <div>
-                                                <p className="font-medium">
-                                                    {member.profile.first_name} {member.profile.last_name}
-                                                </p>
-                                                <p className="text-sm text-muted-foreground">
-                                                    {member.profile.email}
-                                                </p>
-                                            </div>
-                                            <div className="flex items-center gap-4">
-                                                <span className="capitalize font-medium">
-                                                    {member.role}
-                                                </span>
-                                                {isAdmin && (
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={() => {
-                                                            handleRemoveMember(member.profile.id)
-                                                        }}
-                                                        disabled={loading}
-                                                    >
-                                                        <Trash2 className="h-4 w-4 text-red-500" />
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                ))}
-                            </div>
-
-                            {members.length === 0 && (
-                                <div className="text-center text-muted-foreground py-8">
-                                    <Users className="h-8 w-8 mx-auto mb-2" />
-                                    <p>No members found</p>
-                                </div>
-                            )}
-
-                            <div className="flex justify-end items-center space-x-2 mt-4">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setPage(p => Math.max(1, p - 1))}
-                                    disabled={page === 1}
-                                >
-                                    <ChevronLeft className="h-4 w-4" />
-                                </Button>
-                                <span className="text-sm">
-                                    Page {page} of {totalPages}
-                                </span>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                                    disabled={page === totalPages}
-                                >
-                                    <ChevronRight className="h-4 w-4" />
-                                </Button>
-                            </div>
                         </div>
+
+                        <Tabs defaultValue="events" className="w-full">
+                            <TabsList className="grid w-full grid-cols-2">
+                                <TabsTrigger value="events">Events</TabsTrigger>
+                                <TabsTrigger value="members">Members</TabsTrigger>
+                            </TabsList>
+
+                            <TabsContent value="events" className="mt-4">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="text-lg font-semibold">Events</h3>
+                                    {isAdmin && (
+                                        <CreateEventDialog
+                                            organizationId={organizationId}
+                                            onEventCreated={fetchDetails}
+                                        />
+                                    )}
+                                </div>
+                                <ScrollArea className="h-[500px]">
+                                    <EventList organizationId={organizationId} />
+                                </ScrollArea>
+                            </TabsContent>
+
+                            <TabsContent value="members" className="mt-4">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="text-lg font-semibold">Members</h3>
+                                    {isAdmin && (
+                                        <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+                                            <PopoverTrigger asChild>
+                                                <Button
+                                                    variant="default"
+                                                    size="sm"
+                                                >
+                                                    <Users className="h-4 w-4 mr-2" />
+                                                    Add Member
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-80">
+                                                <form onSubmit={handleAddMember} className="space-y-4">
+                                                    <div className="space-y-2">
+                                                        <Label>Search Member</Label>
+                                                        <Command
+                                                            shouldFilter={false}
+                                                        >
+                                                            <CommandInput
+                                                                placeholder="Search by name or email..."
+                                                                value={searchQuery}
+                                                                onValueChange={(value) => {
+                                                                    setSearchQuery(value)
+                                                                    if (value) {
+                                                                        setCommandOpen(true)
+                                                                    }
+                                                                }}
+                                                            />
+                                                            <CommandEmpty>
+                                                                {searchLoading ? (
+                                                                    <div className="flex items-center justify-center py-2">
+                                                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900" />
+                                                                    </div>
+                                                                ) : (
+                                                                    'No results found.'
+                                                                )}
+                                                            </CommandEmpty>
+                                                            <CommandGroup>
+                                                                {searchResults.map((profile) => (
+                                                                    <CommandItem
+                                                                        key={profile.id}
+                                                                        onSelect={() => {
+                                                                            setSelectedProfile(profile)
+                                                                            setPopoverOpen(false)
+                                                                            setCommandOpen(false)
+                                                                            setSearchQuery('')
+                                                                        }}
+                                                                    >
+                                                                        <div className="flex items-center">
+                                                                            <span>
+                                                                                {profile.first_name} {profile.last_name}
+                                                                            </span>
+                                                                            <span className="ml-2 text-sm text-muted-foreground">
+                                                                                ({profile.email})
+                                                                            </span>
+                                                                        </div>
+                                                                    </CommandItem>
+                                                                ))}
+                                                            </CommandGroup>
+                                                        </Command>
+                                                    </div>
+                                                    {selectedProfile && (
+                                                        <>
+                                                            <div className="space-y-2">
+                                                                <Label>Role</Label>
+                                                                <Select value={role} onValueChange={setRole}>
+                                                                    <SelectTrigger>
+                                                                        <SelectValue placeholder="Select a role" />
+                                                                    </SelectTrigger>
+                                                                    <SelectContent>
+                                                                        <SelectItem value="member">Member</SelectItem>
+                                                                        <SelectItem value="admin">Admin</SelectItem>
+                                                                    </SelectContent>
+                                                                </Select>
+                                                            </div>
+                                                            <Button type="submit" className="w-full" disabled={loading}>
+                                                                {loading ? 'Adding...' : 'Add Member'}
+                                                            </Button>
+                                                        </>
+                                                    )}
+                                                </form>
+                                            </PopoverContent>
+                                        </Popover>
+                                    )}
+                                </div>
+                                <ScrollArea className="h-[500px]">
+                                    <div className="space-y-3">
+                                        {members.map((member, index) => (
+                                            <Card key={member.profile.id || `member-${index}`}>
+                                                <CardContent className="flex items-center justify-between p-4">
+                                                    <div>
+                                                        <p className="font-medium">
+                                                            {member.profile.first_name} {member.profile.last_name}
+                                                        </p>
+                                                        <p className="text-sm text-muted-foreground">
+                                                            {member.profile.email}
+                                                        </p>
+                                                    </div>
+                                                    <div className="flex items-center gap-4">
+                                                        <span className="capitalize font-medium">
+                                                            {member.role}
+                                                        </span>
+                                                        {isAdmin && (
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={() => {
+                                                                    handleRemoveMember(member.profile.id)
+                                                                }}
+                                                                disabled={loading}
+                                                            >
+                                                                <Trash2 className="h-4 w-4 text-red-500" />
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                </CardContent>
+                                            </Card>
+                                        ))}
+                                    </div>
+                                </ScrollArea>
+                            </TabsContent>
+                        </Tabs>
                     </div>
                 )}
             </DialogContent>

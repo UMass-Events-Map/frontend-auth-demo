@@ -1,5 +1,6 @@
 import { CreateProfileDto } from '../types/profile';
-import { CreateOrganizationDto, AddMemberDto, OrganizationDetails } from '../types/organization'
+import { CreateOrganizationDto, AddMemberDto, OrganizationDetailsResponseDto, OrganizationResponseDto } from '../types/organization'
+import { CreateEventDto } from '../types/event'
 
 interface ProfileSearchResult {
     id: string;
@@ -61,7 +62,7 @@ export class ApiService {
         return await response.json();
     }
 
-    async getOrganizations(profileId: string) {
+    async getOrganizations(profileId: string): Promise<OrganizationResponseDto[]> {
         const response = await fetch(`${this.baseUrl}/organizations/profile/${profileId}`);
 
         if (!response.ok) {
@@ -133,7 +134,7 @@ export class ApiService {
         token: string,
         limit?: number,
         offset?: number
-    ): Promise<OrganizationDetails> {
+    ): Promise<OrganizationDetailsResponseDto> {
         const params = new URLSearchParams();
         if (limit) params.append('limit', limit.toString());
         if (offset) params.append('offset', offset.toString());
@@ -149,6 +150,61 @@ export class ApiService {
 
         if (!response.ok) {
             throw new Error('Failed to fetch organization details');
+        }
+
+        return await response.json();
+    }
+
+    async createEvent(organizationId: string, eventData: CreateEventDto, token: string) {
+        const response = await fetch(`${this.baseUrl}/events/organization/${organizationId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(eventData)
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to create event');
+        }
+
+        return await response.json();
+    }
+
+    async getOrganizationEvents(organizationId: string, limit?: number, offset?: number) {
+        const params = new URLSearchParams();
+
+        const response = await fetch(
+            `${this.baseUrl}/events/organization/${organizationId}/events?limit=${limit}&offset=${offset}`
+        );
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to fetch organization events');
+        }
+
+        return await response.json();
+    }
+
+    async getBuildings(token: string, limit?: number, offset?: number) {
+        const params = new URLSearchParams();
+        if (limit) params.append('limit', limit.toString());
+        if (offset) params.append('offset', offset.toString());
+
+        const response = await fetch(
+            `${this.baseUrl}/buildings?${params.toString()}`,
+            {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            }
+        );
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to fetch buildings');
         }
 
         return await response.json();

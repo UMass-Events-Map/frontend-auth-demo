@@ -6,12 +6,11 @@ import { useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { OrganizationMember } from '@/app/types/organization'
 import { useToast } from '@/hooks/use-toast'
 
 interface AddMemberProps {
     organizationId: string
-    onMemberAdded: (member: OrganizationMember) => void
+    onMemberAdded: (member: any) => void
 }
 
 export function AddMember({ organizationId, onMemberAdded }: AddMemberProps) {

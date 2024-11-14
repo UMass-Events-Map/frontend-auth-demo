@@ -2,19 +2,19 @@
 
 import { useEffect, useState } from 'react'
 import { ApiService } from '@/app/services/api.service'
-import { Organization } from '@/app/types/organization'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Building2, Mail, MapPin, Users } from 'lucide-react'
 import Image from 'next/image'
 import { OrganizationDetailsDialog } from './OrganizationDetailsDialog'
+import { OrganizationDetailsResponseDto, OrganizationResponseDto } from '../types/organization'
 
 interface OrganizationListProps {
     userId: string
 }
 
 export function OrganizationList({ userId }: OrganizationListProps) {
-    const [organizations, setOrganizations] = useState<Organization[]>([])
+    const [organizations, setOrganizations] = useState<OrganizationResponseDto[]>([])
     const [loading, setLoading] = useState(true)
     const apiService = new ApiService()
 

@@ -1,3 +1,5 @@
+import { Profile } from "./profile";
+
 export interface CreateOrganizationDto {
     organization_name: string;
     email: string;
@@ -6,7 +8,24 @@ export interface CreateOrganizationDto {
     address?: string;
 }
 
-export interface Organization {
+export interface OrganizationMemberProfileDto {
+    id: string;
+    email: string;
+    first_name: string;
+    last_name: string;
+}
+
+export interface OrganizationMemberDto {
+    role: string;
+    profile: OrganizationMemberProfileDto;
+}
+
+export interface OrganizationMembersResponseDto {
+    data: OrganizationMemberDto[];
+    total: number;
+}
+
+export interface OrganizationResponseDto {
     id: string;
     name: string;
     email: string;
@@ -16,26 +35,21 @@ export interface Organization {
     verified: boolean;
 }
 
-export interface OrganizationMember {
-    role: string;
-    profile: {
-        id: string;
-        email: string;
-        first_name: string;
-        last_name: string;
-    };
-}
-
-export interface OrganizationDetails {
-    organization: Organization;
-    members: {
-        data: OrganizationMember[];
-        total: number;
-    };
+export interface OrganizationDetailsResponseDto {
+    organization: OrganizationResponseDto;
+    members: OrganizationMembersResponseDto;
 }
 
 export interface AddMemberDto {
     profileId: string;
     organizationId: string;
-    role: string;
+    role?: string;
+}
+
+export interface ProfilesOrganizations {
+    profile_id: string;
+    organization_id: string;
+    role: 'member' | 'admin';
+    profile: Profile;
+    organization: OrganizationResponseDto;
 } 
