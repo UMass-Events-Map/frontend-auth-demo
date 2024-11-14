@@ -64,7 +64,9 @@ export function OrganizationDetailsDialog({ organizationId, children }: Organiza
     useEffect(() => {
         const searchProfiles = async () => {
             if (!debouncedSearch || !dialogOpen) {
-                setSearchResults([]);
+                if (!selectedProfile) {
+                    setSearchResults([]);
+                }
                 return;
             }
 
@@ -270,9 +272,7 @@ export function OrganizationDetailsDialog({ organizationId, children }: Organiza
                                                 <form onSubmit={handleAddMember} className="space-y-4">
                                                     <div className="space-y-2">
                                                         <Label>Search Member</Label>
-                                                        <Command
-                                                            shouldFilter={false}
-                                                        >
+                                                        <Command shouldFilter={false}>
                                                             <CommandInput
                                                                 placeholder="Search by name or email..."
                                                                 value={searchQuery}
@@ -283,37 +283,44 @@ export function OrganizationDetailsDialog({ organizationId, children }: Organiza
                                                                     }
                                                                 }}
                                                             />
-                                                            <CommandEmpty>
-                                                                {searchLoading ? (
-                                                                    <div className="flex items-center justify-center py-2">
-                                                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900" />
-                                                                    </div>
-                                                                ) : (
-                                                                    'No results found.'
-                                                                )}
-                                                            </CommandEmpty>
-                                                            <CommandGroup>
-                                                                {searchResults.map((profile) => (
-                                                                    <CommandItem
-                                                                        key={profile.id}
-                                                                        onSelect={() => {
-                                                                            setSelectedProfile(profile)
-                                                                            setPopoverOpen(false)
-                                                                            setCommandOpen(false)
-                                                                            setSearchQuery('')
-                                                                        }}
-                                                                    >
-                                                                        <div className="flex items-center">
-                                                                            <span>
-                                                                                {profile.first_name} {profile.last_name}
-                                                                            </span>
-                                                                            <span className="ml-2 text-sm text-muted-foreground">
-                                                                                ({profile.email})
-                                                                            </span>
-                                                                        </div>
-                                                                    </CommandItem>
-                                                                ))}
-                                                            </CommandGroup>
+                                                            {selectedProfile ? (
+                                                                <div className="px-2 py-3 text-sm">
+                                                                    Selected: {selectedProfile.first_name} {selectedProfile.last_name} ({selectedProfile.email})
+                                                                </div>
+                                                            ) : (
+                                                                <>
+                                                                    <CommandEmpty>
+                                                                        {searchLoading ? (
+                                                                            <div className="flex items-center justify-center py-2">
+                                                                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900" />
+                                                                            </div>
+                                                                        ) : (
+                                                                            'No results found.'
+                                                                        )}
+                                                                    </CommandEmpty>
+                                                                    <CommandGroup>
+                                                                        {searchResults.map((profile) => (
+                                                                            <CommandItem
+                                                                                key={profile.id}
+                                                                                onSelect={() => {
+                                                                                    setSelectedProfile(profile)
+                                                                                    setCommandOpen(false)
+                                                                                    setSearchQuery(`${profile.first_name} ${profile.last_name}`)
+                                                                                }}
+                                                                            >
+                                                                                <div className="flex items-center">
+                                                                                    <span>
+                                                                                        {profile.first_name} {profile.last_name}
+                                                                                    </span>
+                                                                                    <span className="ml-2 text-sm text-muted-foreground">
+                                                                                        ({profile.email})
+                                                                                    </span>
+                                                                                </div>
+                                                                            </CommandItem>
+                                                                        ))}
+                                                                    </CommandGroup>
+                                                                </>
+                                                            )}
                                                         </Command>
                                                     </div>
                                                     {selectedProfile && (
