@@ -17,7 +17,6 @@ export interface Organization {
 }
 
 export interface OrganizationMember {
-    profile_id: string;
     role: string;
     profile: {
         id: string;

@@ -5,7 +5,6 @@ import { ApiService } from '@/app/services/api.service'
 import { Organization } from '@/app/types/organization'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ManageMembers } from './ManageMembers'
 import { Building2, Mail, MapPin, Users } from 'lucide-react'
 import Image from 'next/image'
 import { OrganizationDetailsDialog } from './OrganizationDetailsDialog'
@@ -87,7 +86,6 @@ export function OrganizationList({ userId }: OrganizationListProps) {
                                         </CardDescription>
                                     )}
                                 </div>
-                                <ManageMembers organizationId={org.id} />
                             </div>
                         </CardHeader>
                         <CardContent>

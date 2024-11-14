@@ -100,10 +100,15 @@ export class ApiService {
         );
 
         if (!response.ok) {
-            throw new Error('Failed to remove member');
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to remove member');
         }
 
-        return await response.json();
+        const data = await response.json();
+        return {
+            success: data.success,
+            message: data.message
+        };
     }
 
     async searchProfiles(query: string, token: string): Promise<ProfileSearchResult[]> {
